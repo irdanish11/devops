@@ -1,10 +1,10 @@
 # 1. Introduction to Docker and Containerization.
 
-### 1.1 Virtual Machine vs Conainerization:
+### 1.1 Virtual Machine vs Containerization:
 * Virtual Machines tend to be more  computationally expensive and more complex than containers.
 * Virtual Machines can solve the problem handling multiple environments but they waste a lot of computational and storage resource which makes our host system very slow.
 * Sharing re-building, and distribution of VMs can be challenging.
-* Virtuall Machines encapsulate "whole machines" instead of just apps and environments.
+* Virtual Machines encapsulate "whole machines" instead of just apps and environments.
 * Containers are a more lightweight and easier to use than virtual machines.
 * Containers are more portable and can be used on multiple platforms as sharing, re-building and distribution is easy.
 * Containers Encapsulates apps/environments instead of whole machines.
@@ -16,7 +16,7 @@
 * `RUN`: This command runs a command in the container. We can define simple subcommands along with the RUN instruction that we want to execute inside the container. For example, if we want to install a pip package, we can simply use the “RUN pip install package_name” instruction inside the Dockerfile.
 * `COPY`: This command copies files from the host to the container.
 * `WORKDIR`: This command changes the current working directory in the container.
-* `EXPOSE`: This command exposes a port on the host. This command exposes the specified port but it does not publish/map the container port to the host port. To do that we need to specifiy `publish` argument with `docker run` as `docker run -p host_port_number:docker_port_number` the `EXPOSE` command is optional, but its a good practice to specify it.
+* `EXPOSE`: This command exposes a port on the host. This command exposes the specified port but it does not publish/map the container port to the host port. To do that we need to specify `publish` argument with `docker run` as `docker run -p host_port_number:docker_port_number` the `EXPOSE` command is optional, but its a good practice to specify it.
 * `ENTRYPOINT`: This command sets the entrypoint of the container. The `ENTRYPOINT` specifies a command that will always be executed when the container starts.
 * `CMD`: This command sets the command that is run when the container is started. The `CMD` specifies arguments that will be fed to the `ENTRYPOINT`.
 
@@ -25,7 +25,7 @@ If you want to make an image dedicated to a specific command you will use `ENTRY
 ### 2.2 Understanding Image Layers:
 Images are layer based. An Image is built up from multiple layers based on the different instructions. Every instruction create a layer. These layers are cached. 
 
-When an image is buid/re-build only the instruction where change happed and all the instruction after that instruction are reevaluated rest of them are used from cached layers. This speeds up the image build time. In addition an image is read only. It means once an image is buit/rebuild it cannot be modified.
+When an image is built/re-build only the instruction where change happened and all the instruction after that instruction are reevaluated rest of them are used from cached layers. This speeds up the image build time. In addition an image is read only. It means once an image is built/rebuild it cannot be modified.
 
 ### 2.3 Docker run vs start:
 * `docker run`: This command creates a new container based of the specified image.
@@ -42,7 +42,7 @@ To run Docker container in interactive mode we can combine `-i` and `-t` flags. 
 * `-i` flag Keep STDIN open even if not attached.
 * `-t` flag Allocate a pseudo-TTY.
 * If a running container is detached, we can still enter into its interactive mode by using the `docker exec -it` command.
-* With `docker start` we can use `-ai` flag to start a container in interactive mode, but this will only work if the continer started in interactive mode.
+* With `docker start` we can use `-ai` flag to start a container in interactive mode, but this will only work if the container started in interactive mode.
 
 ### 2.5 Docker remove container images and containers:
 * `docker ps`: This command lists all the containers that are running.
@@ -69,3 +69,76 @@ We can copy files to and from a running Docker container using the `docker cp` c
 * We can also provide a name and tag to docker image by proving `--tag` and `-t` flags to the `docker build` command as `docker build --tag my-image:1.0`. Name and optionally a tag in the 'name:tag' format.
 
 # 3. Docker Volumes and Managing Data.
+
+### 3.1 Data:
+There are three types of data when we consider docker.
+
+* `Application (Code+Environment)`: This data includes the application code and its dependencies. It's written and provided by the developer. This data is added to the image in `build` phase. Once the image is built the data inside it can't be changed i.e. a docker image is immutable and read only.
+* `Temporary App Data`: The type of data is produced by the user of application e.g. session data. This data is fetched and produced in the container and stored in the memory or temporary files. It changes dynamically but cleared regularly. It's temporary data hence stored in containers and we can both read write.
+* `Permanent App Data`: This type of data is also produced by the user e.g. the user accounts data. Fetched and produced in container. We need to store it permanently and usually it is stored in databases or files. This data must not be lost when we stop/starts the container or we delete the container. We can read and write this type of data & stored with container and volumes.
+
+### 3.2 Docker Volumes:
+The data stored inside a container is lost when we remove a container or we run a new container with the same image. We can store the data in a volume and then use it when we run a new container. Volumes helps us to store the data in a persistent way. Volumes are `directories/folders` on the host machine, which are mounted (mapped to a directory inside a container) into the container. Changes in the either the host or the container directory will be reflected in the other directory.
+
+Volume persists if a container is removed or stopped. If a container restarts and mounts the same volume, any data inside that volume is available to the container. Docker provides multiple types of external data storage mechanisms. Such as Volumes (managed by docker) and Bind Mounts (managed by developer). There are further two types of volumes:
+* `Anonymous Volumes`: Anonymous volumes are created within the docker file using `VOLUME [ 'path/to/the/volume' ]` command. In anonymous volumes docker sets up a path/directory on the host machine, and the exact location is unknown to the developer. The volumes are managed by `docker volume` command. Once we remove the container, the anonymous volume are removed as well. We can use `docker volume ls` to see the list of volumes. The anonymous volumes are not persistent and have very cryptic names such as `f36167sg898vs726vgv26vg17` i.e. some kind of hash.
+* `Named Volumes`: In named volumes the developer can create a volume and then mount it in the container. A defined path in the container is mapped to the created volume/mount i.e. a path on the host machine. Named volumes are great for data which should be persistent but which we don't need to edit directly. The named volumes are not created in the Dockerfile, instead they are created when we run the container e.g. 
+ 
+    ```bash
+    docker run -v volume_name:/container/path/to/volume container_name/id
+
+    docker run -v feedback:/app users:latest
+    ```
+
+  Named volumes are also managed by docker i.e. we don't specify the path of the directory that would be mapped to container path docker manages this itself. The only difference between `Named Volume` and `Anonymous Volume` is that named volume persists the data because we can identify them by their name while anonymous volume will not persist data because we don't know their name and data is lost once the container is removed. Named volumes can also be create manually with `docker volume create VOLUME_NAME`. They are created in `/var/lib/docker/volumes` and can be referenced to by only their name. Let's say if we create a volume called `mysql_data`, you can just reference to it like this `docker run -v mysql_data:/containerdir IMAGE_NAME`.
+
+
+### 3.3 Docker Bind Mounts:
+Bind mounts are used to mount a host directory into a container. The host directory is mounted into the container at the specified path. The host directory is something that we provide and its not managed by docker, its managed by developer. The path to the host directory should be an absolute path and not the relative path.
+
+```bash
+docker run -v absolute/path/to/host/directory:/container/path/to/volume container_name/id
+
+docker run -v /run/media/danish/404/Drives/GoogleDrive/Documents/devops:/app users:latest
+```
+The path on the host that is mounted to the container and can be accessed from both the container and the host. The changes made in either directory will be reflected in the other directory.
+
+Let's say we are building a node app. There could be a use case where we want to mount our working directory i.e. `app` directory to the container, so that when ever we make a change to our code it'll be reflected in the app running inside the container. That will save us from having to rebuild the container every time we make a change to the code. But the problem associated with this approach is that in our docker image where we have the `app` directory(where we have installed the node modules while building the image), will be overwritten once we mount the `app` directory on our host to the container. As a result the app will not be able to access the node modules because they will be overwritten and removed from container.
+
+The solution to this problems is to use anonymous volume along with bind mount. We'll create a bind mount volume to our `app` directory on our host machine, and apart from that we'll create anonymous volume with this `/app/node_modules` path. This way the `node_modules` directory will be available inside the container and will not be overwritten. Because in docker if there is a conflict between the two volumes, the one with the longer path (deeper path) wins and is not overwritten.
+
+```bash
+docker run -v /run/media/danish/404/Drives/GoogleDrive/Documents/devops:/app -v /app/node_modules users:latest
+```
+
+### 3.4 Summary of Docker Volumes and Bind Mounts:
+
+* `docker run -v /app/data`: This creates an anonymous volume, can also be created using `VOLUME ['path/to/the/volume']` command inside the Dockerfile.
+* `docker run -v data:/app/data`: This creates a named volume, can also be created using `docker volume create VOLUME_NAME` command. The volume can be accessed using `data` i.e its name.
+* `docker run -v /path/to/code:/app/code`: This creates a bind mount.
+* Following is the summary of all three:
+  
+  ![Summary of anonymous volumes, named volumes and bind mounts](images/volumes.png)
+
+What you want to use comes mostly down to either preference or your management. If you want to keep everything in the "docker area" (`/var/lib/docker`) you can use volumes. If you want to keep your own directory-structure, you can use binds.
+
+Docker recommends the use of volumes over the use of binds, as volumes are created and managed by docker and binds have a lot more potential of failure (also due to layer 8 problems). If you use binds and want to transfer your containers/applications on another host, you have to rebuild your directory-structure, where as volumes are more uniform on every host.
+
+
+### 3.5 Read Only volumes:
+We can make a volume read-only by adding `:ro` to the end of volume path. This will make the volume read-only and the container will not be able to write to that volume. What if we want to write data to the subdirectory of that volume. That we can do by specifying another volume having the subdirectory path, and we know that in case of path conflict the longer path wins.
+
+```bash
+docker run -v /absolute/path/devops:/app:ro -v /app/node_modules -v feedback:/absolute/path/devops/feedback  users:latest
+```
+
+### 3.6 Managing Docker Volumes:
+Docker volumes provide us various utilities to manage docker volumes. 
+* `docker volume ls`: This command lists all the volumes that are managed by docker i.e. named and anonymous volumes.
+* `docker volume create VOLUME_NAME`: This command creates a named volume.
+* `docker volume rm VOLUME_NAME`: This command removes a named volume, but this volume should not be in use.
+* `docker volume inspect VOLUME_NAME`: This command returns the details of a named volume.
+* `docker volume prune VOLUME_NAME`: This command prunes/removes the unused named volumes.
+
+### 3.7 Docker Ignore File:
+Docker ignore file is a file which is used to ignore files in a directory during a `COPY` command. This is useful when we want to ignore some files in a directory. To use a file in the build context, the `Dockerfile` refers to the file specified in an instruction, for example, a `COPY` instruction. To increase the build’s performance, exclude files and directories by adding a `.dockerignore` file to the context directory. The `.dockerignore` file contains a list of files and directories to ignore and is similar to the `.gitignore` file.
