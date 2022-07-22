@@ -108,7 +108,7 @@ $ ls -l /bin/login
 
 
 * `chown` command changes the ownership of a file. Example: `chown username filename/directory`. This command changes the ownership of the file to the user with the specified username. To change the owner and group as well, we can do: `chown username:groupname filename/directory`. To change the ownership of all the files in the directory, we can add `-R` flag to the command.
-* `chmod` command changes the file mode bits of each given file according to mode, which can be either a symbolic representation of changes to make, or an octal number representin the bit pattern for the new mode bits. A combination of the  letters `ugoa` controls which users access to the file will be changed. Instead of one or more of these letters, you can specify exactly one of the letters `ugo` here `u` is user, `g` is group and `o` is others. The `+` means add the permission and `-` means remove the permission. An example of the command is: `chmod u+x filename`, which adds the executable permission to the file for the. This `chmod o-w` command removes the write permission for the other users.
+* `chmod` command changes the file mode bits of each given file according to mode, which can be either a symbolic representation of changes to make, or an octal number representing the bit pattern for the new mode bits. A combination of the  letters `ugoa` controls which users access to the file will be changed. Instead of one or more of these letters, you can specify exactly one of the letters `ugo` here `u` is user, `g` is group and `o` is others. The `+` means add the permission and `-` means remove the permission. An example of the command is: `chmod u+x filename`, which adds the executable permission to the file for the. This `chmod o-w` command removes the write permission for the other users.
 * We can also change permissions numerically using the octal number. Example: `chmod 755 filename`. In the number `755`, first digit represents the user permissions, second digit represents the group permissions and third digit represents the other users permissions. The number `4` is for read, `2` for write and `1` for execute, and their sum can be used to determine permissions. So in `755` the user has read, write and execute permissions, because if we sum `4`, `2` and `1` we'll get `7`. Similarly the second digit `5` indicates the group has read and execute permissions and finally the third digit `5` indicates the other users have read and execute permissions. If we have `0` in any position that means no position is allowed.
 
 
@@ -120,18 +120,18 @@ $ ls -l /etc/sudoers
 ```
 The permissions of the file is read only for root and the root group, no write permissions. The `visudo` command opens the sudoers file and only then we can write to the sudoers file.
 ```shell
-## Allow root to run any commands anywhere
+# Allow root to run any commands anywhere
 root        ALL=(ALL)       ALL
 ```
 We can search for the above line or `root` in the `sudoers` file, and then below that line we can add another user whom we want to grant `sudo` access. For example:
 ```shell
-## Allow root to run any commands anywhere
+# Allow root to run any commands anywhere
 root        ALL=(ALL)       ALL
 aws        ALL=(ALL)       ALL
 ```
 If want that the user shouldn't be asked password when executing commands as `sudo`, then we can add `NOPASSWD: ` before the last `ALL`. Example below:
 ```shell
-## Allow root to run any commands anywhere
+# Allow root to run any commands anywhere
 root        ALL=(ALL)       ALL
 aws        ALL=(ALL)       NOPASSWD: ALL
 ```
@@ -192,3 +192,5 @@ $ tar -czvf my_archive.tar my_file.txt
 The above command creates the tar archive `c` for create, `z` for gzip compress and `v` for verbose and `f` for filename.
 
 * An alternative way for archiving is to use the `zip` and `unzip` utilities. But these utilities are not available on all Linux distributions, we need to install them.
+
+# Vagrant & Linux Servers:

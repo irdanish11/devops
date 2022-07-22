@@ -142,3 +142,72 @@ Docker volumes provide us various utilities to manage docker volumes.
 
 ### 3.7 Docker Ignore File:
 Docker ignore file is a file which is used to ignore files in a directory during a `COPY` command. This is useful when we want to ignore some files in a directory. To use a file in the build context, the `Dockerfile` refers to the file specified in an instruction, for example, a `COPY` instruction. To increase the build’s performance, exclude files and directories by adding a `.dockerignore` file to the context directory. The `.dockerignore` file contains a list of files and directories to ignore and is similar to the `.gitignore` file.
+
+### 3.8 Arguments (ARG) and Environment Variables (ENV):
+* Docker support build-time arguments and runtime environment variables.
+* Arguments allow us to set flexible bits of data (i.e. variables) in the Dockerfile. 
+* Arguments can be used to build a Docker Image with different values by providing the values to the arguments using `--build-arg` option with `docker build` command.
+* Environment variables are available inside of the Dockerfile and in application code.
+* We set environment variables in the Dockerfile using `ENV` command and provide values to these environment variables using `--env` option with `docker run` command.
+* Args and Env variables allow us to create flexible images and containers. 
+
+***Environment Variables:***
+* Lets say we have a node app that is listening on port 80 in a container maybe want to change the port later on, so instead of hard coding the port number in `app.listen(80)` we can use environment variable to set the port number by using `process.env.PORT` to access the port number set in Dockerfile and then set the `PORT` environment variable in Dockerfile.
+* This way we don't have to build the image every time we need to change the port number. We'll just simply provide the port number using `--env` option with `docker run` command.
+
+```js
+app.listen(process.env.PORT);
+```
+
+* In Dockerfile we can set the port number using `ENV` command.
+
+```Dockerfile
+# here 80 is the default value which we can change when we run the container
+ENV PORT=80
+
+# exposing the above mentioned PORT
+EXPOSE $PORT
+
+CMD ["node", "app.js"]
+```
+* We need to specify the environment variables as key values `key1=value1` with `--env` or `-e` flag.
+* To run the container with the new port number, we need to publish the same port that we have provided with `--env` flag, we can use the following command to run the container:
+
+```bash
+docker run -p 3000:8080 --env PORT=8080 app:latest
+```
+* We can provide multiple environment variables using `--env`/`-e` flag e.g. `-e key1=value1 -e key2=value2`.
+* We can also specify all environment variables in a file often that file is called `Dockerfile.env` or `.env` and specify all the environment variables in the file as follows:
+
+```bash
+KEY1=value1
+KEY2=value2
+```
+* Then we can use `--env-file` flag to specify the file path to use the specified environment variables as given by the command below:
+
+```bash
+docker run -p 3000:8080 --env-file Dockerfile.env app:latest
+```
+* This way by using the environment variables we can run the same docker image with different configurations without having to build the image again.
+
+### Arguments:
+* By using build-time arguments we can specify different values for the arguments during the `docker build` command instead of just hard coding the values in the Dockerfile.
+* Let's say in the context of node app the default value to the environment variable `PORT` is hard coded to 80. 
+* Let's say we want to change the default value of `PORT` during building the image, we can do this by using build-time arguments.
+* We will specify the argument `DEFAULT_PORT` and the default value of the argument is 80 by using `ARG` command in the Dockerfile.
+
+```Dockerfile
+ARG DEFAULT_PORT=80
+
+ENV PORT $DEFAULT_PORT
+
+EXPOSE $PORT
+
+CMD ["node", "app.js"]
+```
+
+* Now we can build the image with the desired default port number for our node app by specifying the `--build-arg` flag with the desired port number as follows:
+
+```bash
+docker build --build-arg DEFAULT_PORT=8000 -t app:latest .
+```
