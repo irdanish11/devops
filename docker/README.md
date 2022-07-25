@@ -190,7 +190,7 @@ docker run -p 3000:8080 --env-file Dockerfile.env app:latest
 ```
 * This way by using the environment variables we can run the same docker image with different configurations without having to build the image again.
 
-### Arguments:
+### 3.9 Arguments:
 * By using build-time arguments we can specify different values for the arguments during the `docker build` command instead of just hard coding the values in the Dockerfile.
 * Let's say in the context of node app the default value to the environment variable `PORT` is hard coded to 80. 
 * Let's say we want to change the default value of `PORT` during building the image, we can do this by using build-time arguments.
