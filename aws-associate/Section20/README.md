@@ -44,6 +44,7 @@ Kinesis Consumers - AWS Lambda
 <p align="center">
 <img src="images/kcl-4shards-example.png" width="450" height="300" />
 </p>
+
 * We can run 2 KCL apps running on 2 EC2 instances. DynamoDB will keep track of the progress of the read (how far an app has read into Kinesis Data Stream) and manage the sharing of shards. As in this case the 1st KCL app is reading from shard 1 and 2, while the second KCL app is reading from shard 3 and 4.
 * If one of the app goes down then the reading from the other shards will be resumed where it checkpointed.
 
@@ -51,6 +52,7 @@ Kinesis Consumers - AWS Lambda
 <p align="center">
 <img src="images/kcl-4shards-example-scaling-kcl.png" width="450" height="300" />
 </p>
+
 * If we scale up our KCL apps, and now we have 4 EC2 instances, then each instance would be reading from each shard. Therefore the progress will be resumed from DynamoDB and checkpointed again. We can't have KCL apps more than shards because then one will be doing nothing.
   
 #### KCL Example - 6 shards scaling Kinesis
@@ -82,6 +84,7 @@ Kinesis Consumers - AWS Lambda
 <p align="center">
 <img src="images/kinesis-operation-shard-merging.png" width="380" height="300" />
 </p>
+
 * Decrease the stream capacity and save costs.
 * Can be used to group two shards with low traffic (cold shards), as in this example shard1 and shard4 are merged into shard6.
 * Old shards will be deleted once the data is expired.
