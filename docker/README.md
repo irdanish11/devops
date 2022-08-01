@@ -142,3 +142,36 @@ Docker volumes provide us various utilities to manage docker volumes.
 
 ### 3.7 Docker Ignore File:
 Docker ignore file is a file which is used to ignore files in a directory during a `COPY` command. This is useful when we want to ignore some files in a directory. To use a file in the build context, the `Dockerfile` refers to the file specified in an instruction, for example, a `COPY` instruction. To increase the build’s performance, exclude files and directories by adding a `.dockerignore` file to the context directory. The `.dockerignore` file contains a list of files and directories to ignore and is similar to the `.gitignore` file.
+
+
+# 4. Networking and Cross Container Communication.
+
+### 4.1 Types of Networking and Communication in Containers:
+* A container can communicate in three different ways.
+* Communicating with WWW (World Wide Web) using HTTP/HTTPS e.g. API calls in our dockerized application.
+* Communicating with host machine.
+* Communicating with another container.
+* The communication with WWW is very simple we just need to do API calls and nothing extra is needed to configure the only requirement is that the host machine should be connected to the internet.
+* To communicate with host machine we need to use `host.docker.internal` at the place ip in the url. For example we want to access `mongodb` database on the host machine, instead of using this connection url `mongodb://localhost:27017/database`, we should replace `localhost` with `host.docker.internal` as shown here: `mongodb://host.docker.internal.27017/database` 
+* To communicate with another docker on the host machine we need to find its IP and use it in place of `localhost` in the url. But this is very cumbersome as we hardcoded the IP of the docker in the url, which is not a good practice because the ip of a container can change when we restart it or re-run it. The solution to this problem is given in the next section.
+
+
+### 4.2 Docker Networks:
+* To make cross container communication easier, we can use docker networks.
+* We can create a docker network by using command `docker network create NETWORK_NAME`.
+* To check the available networks we can do `docker network ls`.
+* So when we want to make a container available at a network we need to provide `--network NETWORK_NAME` in the `docker run` command as follows:
+
+```bash
+docker run -d --name mongodb --network my_network mongo
+``` 
+
+* Now in our application instead of using IP of the container we can use the name of the of the container that we want to connect to as follows:
+
+```js
+'mongodb://mongodb:27017/database'
+```
+
+* Now our application container should be on the same network as the container we want to connect to and we can do the by providing `--network NETWORK_NAME` in the `docker run` command to our application container.
+
+
