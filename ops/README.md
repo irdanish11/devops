@@ -90,7 +90,7 @@ Every file in the system is owned by a user and an associated group with it. We 
 
 ### 4.5 File Permissions:
 File permissions can be viewed by using `ls -l` command. The `ls` command is an example of read, `cd` command is an example of executable, and `rm` command is an example of write permission.
-```shell
+```bash
 $ ls -l /bin/login
 -rwxr-xr-x 1 root root 38840 مارچ   28 17:34 /bin/login
 ```
@@ -108,30 +108,30 @@ $ ls -l /bin/login
 
 
 * `chown` command changes the ownership of a file. Example: `chown username filename/directory`. This command changes the ownership of the file to the user with the specified username. To change the owner and group as well, we can do: `chown username:groupname filename/directory`. To change the ownership of all the files in the directory, we can add `-R` flag to the command.
-* `chmod` command changes the file mode bits of each given file according to mode, which can be either a symbolic representation of changes to make, or an octal number representin the bit pattern for the new mode bits. A combination of the  letters `ugoa` controls which users access to the file will be changed. Instead of one or more of these letters, you can specify exactly one of the letters `ugo` here `u` is user, `g` is group and `o` is others. The `+` means add the permission and `-` means remove the permission. An example of the command is: `chmod u+x filename`, which adds the executable permission to the file for the. This `chmod o-w` command removes the write permission for the other users.
+* `chmod` command changes the file mode bits of each given file according to mode, which can be either a symbolic representation of changes to make, or an octal number representing the bit pattern for the new mode bits. A combination of the  letters `ugoa` controls which users access to the file will be changed. Instead of one or more of these letters, you can specify exactly one of the letters `ugo` here `u` is user, `g` is group and `o` is others. The `+` means add the permission and `-` means remove the permission. An example of the command is: `chmod u+x filename`, which adds the executable permission to the file for the. This `chmod o-w` command removes the write permission for the other users.
 * We can also change permissions numerically using the octal number. Example: `chmod 755 filename`. In the number `755`, first digit represents the user permissions, second digit represents the group permissions and third digit represents the other users permissions. The number `4` is for read, `2` for write and `1` for execute, and their sum can be used to determine permissions. So in `755` the user has read, write and execute permissions, because if we sum `4`, `2` and `1` we'll get `7`. Similarly the second digit `5` indicates the group has read and execute permissions and finally the third digit `5` indicates the other users have read and execute permissions. If we have `0` in any position that means no position is allowed.
 
 
 ### 4.6 Sudo
 The `sudoers` file is a file Linux and Unix administrators use to allocate system rights to system users. This allows the administrator to control who does what.  When you want to run a command that requires root rights, Linux checks your username against the sudoers file. Linux checks the username against the sudoers file. This happens when we type the command “sudo”. If it determines, that our username is not on the list, you cannot run the command/program logged in as that user. The file can be found as `vi /etc/sudoers`. The permissions of the file are as follows:
-```shell
+```bash
 $ ls -l /etc/sudoers
 -r--r-----. 1 root root 4328 Feb 12 17:54 /etc/sudoers
 ```
 The permissions of the file is read only for root and the root group, no write permissions. The `visudo` command opens the sudoers file and only then we can write to the sudoers file.
-```shell
-## Allow root to run any commands anywhere
+```bash
+# Allow root to run any commands anywhere
 root        ALL=(ALL)       ALL
 ```
 We can search for the above line or `root` in the `sudoers` file, and then below that line we can add another user whom we want to grant `sudo` access. For example:
 ```shell
-## Allow root to run any commands anywhere
+# Allow root to run any commands anywhere
 root        ALL=(ALL)       ALL
 aws        ALL=(ALL)       ALL
 ```
 If want that the user shouldn't be asked password when executing commands as `sudo`, then we can add `NOPASSWD: ` before the last `ALL`. Example below:
 ```shell
-## Allow root to run any commands anywhere
+# Allow root to run any commands anywhere
 root        ALL=(ALL)       ALL
 aws        ALL=(ALL)       NOPASSWD: ALL
 ```
@@ -192,3 +192,150 @@ $ tar -czvf my_archive.tar my_file.txt
 The above command creates the tar archive `c` for create, `z` for gzip compress and `v` for verbose and `f` for filename.
 
 * An alternative way for archiving is to use the `zip` and `unzip` utilities. But these utilities are not available on all Linux distributions, we need to install them.
+
+# 5. Vagrant & Linux Servers:
+
+### 5.1 Vagrant IP, RAM and CPU:
+* We can configure our Vagrant VM IP (private and public(bridge)), RAM and CPU in our Vagrantfile. 
+* To configure a private network (which allows host-only access to the VM), we need to configure `config.vn.network` property in Vagrantfile as follows:
+
+```ruby
+config.vm.network "private_network", ip: "192.168.56.2"
+```
+* To set the `ip` first check the ip of the host by using `ip addr` command. Let's say if the ip of our host is `192.168.51.255`, then we can set the ip to anywhere `192.168.51.0` to `192.168.51.254` just excluding the `255`, i.e hosts final octet.
+* To create a public network, which generally matched to bridged network. Bridged networks make the machine appear as another physical device on  our network. We need to configure `config.vm.network` property as follows:
+  
+```ruby
+config.vm.network "public_network"
+```
+
+* To configure the CPU or RAM we need to look for `config.vm.provider "virtualbox" do |vb|` configuration in the Vagrantfile and set the CPU and RAM to desired values.
+
+```ruby
+  config.vm.provider "virtualbox" do |vb|
+  #   # Display the VirtualBox GUI when booting the machine
+  #   vb.gui = true
+  #
+  #   # Customize the amount of memory on the VM:
+      vb.memory = "1600"
+      vb.cpus = 1
+  end
+```
+
+### 5.2 Vagrant Sync Directories:
+* Synced directories enable Vagrant to sync a directory on the host machine to the guest machine, allowing us to continue working on our project's files on our host machine, but use the resources in the guest machine to compile or run our project.
+* The change made to the Sync directories by host machine will be reflected in the VM directory, and the changes made by VM will also be reflected in the host machine.
+* By default, Vagrant will share the project directory (the directory with the Vagrantfile) to `/vagrant`.
+* To configure a different sync directory we need to set the following configuration:
+
+```ruby
+config.vm.synced_folder "../data", "/vagrant_data"
+```
+* The first argument is the path on the host to the actual folder. The second argument is the path on the guest to mount the folder. 
+
+
+### 5.3 Provisioning:
+* Provisioners in Vagrant allow us to automatically install software, alter configurations, and more on the machine as part of the `vagrant up` process.
+* This is useful since boxes typically are not built perfectly for our use case. 
+* Of course, if we want to just use `vagrant ssh` and install the software by hand, that works. 
+* But by using the provisioning systems built-in to Vagrant, it automates the process so that it is repeatable. 
+* Most importantly, it requires no human interaction, so we can `vagrant destroy` and `vagrant up` and have a fully ready-to-go work environment with a single command.
+* Vagrant provides multiple options for provisioning the machine, from simple shell scripts to more complex, industry-standard configuration management systems e.g. Ansible, Chef, Puppet, etc.
+* Provisioning happens at certain points during the lifetime of our Vagrant environment:
+    - On the first `vagrant up` that creates the environment, provisioning is run. If the environment was already created and the `up` is just resuming a machine or booting it up, the provisioning will not run unless the `--provision` flag is explicitly provided.
+    - When `vagrant provision` is used on a running environment.
+    - When `vagrant reload --provision` is called. The `--provision` flag must be present to force provisioning.
+* We can also bring up our environment and explicitly not run provisioners by specifying `--no-provision`.
+* Following is an example of setting provisioning in Vagrantfile:
+
+```ruby
+config.vm.provision "shell", inline: <<-SHELL
+apt-get update
+apt-get install -y apache2
+SHELL
+```
+
+### 5.4 Website Setup:
+* Find a template from `https://www.tooplate.com/`.
+* Select a template and get its download link from browser dev tools from `network` tab e.g. `https://www.tooplate.com/zip-templates/2124_vertex.zip`.
+* Create a new directory with the name of the template and initialize `centos7` box in that directory as follows:
+  
+```bash
+vagrant init geerlingguy/centos7
+```
+
+* Then add the following lines to the provisioning configuration section in Vagrantfile:
+
+```bash
+printf "\n\nInstalling Packages\n\n"
+sudo -i
+yum install httpd wget unzip -y
+systemctl start httpd
+systemctl enable httpd
+cd /tmp/
+echo "Downloading HTML Template"
+wget https://www.tooplate.com/zip-templates/2124_vertex.zip
+unzip 2124_vertex.zip
+cd 2124_vertex
+cp -rv * /var/www/html/
+systemctl restart httpd
+printf "\n\nFiles in html:\n\n"
+ls /var/www/html/
+```
+
+* SSH into vm by `vagrant ssh` and then check for the static or dynamic ip by `ifconfig` or `ip addr`
+* Paste the ip in the browser we'll be served with that website.
+
+### 5.5 Setting up Wordpress Site:
+* Create a directory with the name of `wordpress`, `cd` into that directory.
+* Initialize a VM with following command:
+
+```bash
+vagrant init ubuntu/bionic64
+```
+
+* Follow this [guide](https://ubuntu.com/tutorials/install-and-configure-wordpress#6-configure-wordpress-to-connect-to-the-database) to install wordpress on the VM.
+* Add all the commands mentioned in the above link to provisioning configuration section of the Vagrantfile. 
+* Reference Vagrantfile can be [found here](Vagrant/wordpress/Vagrantfile).
+  
+
+### 5.6 Vagrant Multi-Machine
+* Vagrant is able to define and control multiple guest machines per Vagrantfile. This is known as a `multi-machine` environment.
+* These machines are generally able to work together or are somehow associated with each other. Here are some use-cases people are using multi-machine environments for today:
+  - Accurately modeling a multi-server production topology, such as separating a web and database server.
+  - Modeling a distributed system and how they interact with each other.
+  - Testing an interface, such as an API to a service component.
+  - Disaster-case testing: machines dying, network partitions, slow networks, inconsistent world views, etc.
+* Multiple machines are defined within the same project Vagrantfile using the `config.vm.define` method call. 
+* This configuration directive it creates a Vagrant configuration within a configuration. 
+* An example is given below:
+
+```ruby
+Vagrant.configure("2") do |config|
+  config.vm.provision "shell", inline: "echo Hello"
+ 
+  config.vm.define "web" do |web|
+    web.vm.box = "apache"
+    web.vm.network "private_network", ip: "192.168.56.17"
+    web.vm.network "public_network"
+    web.vm.provider "virtualbox" do |vb|
+      vb.memory = "1600"
+      vb.cpus = 1
+    end
+  end
+ 
+  config.vm.define "db" do |db|
+    db.vm.box = "mysql"
+    db.vm.network "private_network", ip: "192.168.56.18"
+    db.vm.network "public_network"
+    db.vm.provider "virtualbox" do |vb|
+      vb.memory = "1600"
+      vb.cpus = 1
+    end
+end
+```
+* As we can see, config.vm.define takes a block with another variable. This variable, such as web above, is the exact same as the config variable, except any configuration of the inner variable applies only to the machine being defined. Therefore, any configuration on web will only affect the web machine.
+* And importantly, we can continue to use the config object as well. The configuration object is loaded and merged before the machine-specific configuration, just like other Vagrantfiles within the Vagrantfile load order.
+* This is similar to how languages have different variable scopes.
+* Commands that only make sense to target a single machine, such as `vagrant ssh`, now require the name of the machine to control. Using the example above, we would say `vagrant ssh web` or `vagrant ssh db`.
+* Other commands, such as `vagrant up`, operate on every machine by default. So if we ran `vagrant up`, Vagrant would bring up both the web and DB machine. We could also optionally be specific and say `vagrant up web` or `vagrant up db`.
