@@ -28,7 +28,7 @@ In linux everything is a file. There are multiple types of files.
 * `d`: D in the start indicates that the type of file is directory.
 * `c`: C in the start indicates that the type of file is character device. Such as keyboard, mouse, tty. These files are often found in `/dev` directory.
 * `b`: B in the start indicates that the type of file is block device. Such as hard disk, floppy disk, CD-ROM.
-* `p`: P in the start indicates that the type of file is pipe. A special file that allows proceses to communicate with each other without using network socket semantics.
+* `p`: P in the start indicates that the type of file is pipe. A special file that allows processes to communicate with each other without using network socket semantics.
 * `s`: S in the start indicates that the type of file is socket. A special file that provides inter-process networking protected by the file system's access control.
 * `l`: L in the start indicates that the type of file is symbolic link.
 * `u`: U in the start indicates that the type of file is unknown.
@@ -339,3 +339,22 @@ end
 * This is similar to how languages have different variable scopes.
 * Commands that only make sense to target a single machine, such as `vagrant ssh`, now require the name of the machine to control. Using the example above, we would say `vagrant ssh web` or `vagrant ssh db`.
 * Other commands, such as `vagrant up`, operate on every machine by default. So if we ran `vagrant up`, Vagrant would bring up both the web and DB machine. We could also optionally be specific and say `vagrant up web` or `vagrant up db`.
+
+
+# 6. VProfile Project:
+
+### 6.1 Introduction:
+* We are going to deploy the VProfile project to a multi-machine environment.
+* The architecture of the project is shown below:
+
+<p align="center">
+<img src="VProfileProject/images/architecture.png" height="400" width="650">
+</p>
+
+* We need to install following two Vagrant plugins:
+  - vagrant-vbguest
+  - vagrant-hostsupdater
+
+```bash
+vagrant plugin install plugin-name
+```

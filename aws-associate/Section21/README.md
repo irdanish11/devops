@@ -100,3 +100,8 @@
     - Amazon Lex
     - Amazon Alexa
     - Amazon Kinesis Data Firehose
+
+- We can make synchronous invocation to our lambda function by using the following command:
+```shell
+aws lambda invoke --function-name demo-lambda --cli-binary-format raw-in-base64-out --payload '{"key1": "value-1", "key2": "value2", "key3":"value-3"}' response.json
+```

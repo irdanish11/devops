@@ -1,3 +1,8 @@
 jenkins/2-jenkins-docker/remote-key
 jenkins/2-jenkins-docker/remote-key.pub
 *.log
+aws-associate/Section21/response.json
+ops/VProfileProject/vprofile-project/vagrant/Manual_provisioning/.vagrant
+*.pdf
+*.log
+ops/VProfileProject/vprofile-project/vagrant/Automated_provisioning/.vagrant
