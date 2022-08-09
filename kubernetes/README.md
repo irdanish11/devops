@@ -94,3 +94,11 @@
 * Pods are created and managed by kubernetes i.e. by master node.
 * `kubelet` is the component that runs on the worker node and responsible for communication between worker node and master node, so that master node can manage the pods on the worker node.
 * `kube-proxy` also runs on the worker node and is responsible for handling incoming and outgoing traffic and only allowed traffic is able to reach the pods.
+
+### 1.6 Kubernetes Master Node:
+* `API Server` is the most important component of the kubernetes running on the master node. It is counter point to the `kubelet` service running on the worker node. It is responsible for handling communication between the worker nodes and the master node.
+* `Scheduler` is responsible for watching our pods and choosing worker nodes where new pods should be created on. 
+* `Kube-Controller-Manager` watches and control worker nodes and ensures correct number of pods are up and running and work closely with `Scheduler` and `API Server`.
+* `Cloud-Controller-Manager` is similar to `Kube-Controller-Manager` but for a specific cloud provider and knows how to interact with the cloud provider resources.
+* Big Cloud providers like AWS, GCP, Azure, etc. already have services available (e.g. EKS, GKE, AKS, etc.) that can be used to create and manage the cluster and we don't need to create and manage the cluster ourselves.
+* We just need to provide our kubernetes configuration and the respective cloud provider will do all the heavy lifting.
