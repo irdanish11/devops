@@ -358,3 +358,135 @@ end
 ```bash
 vagrant plugin install plugin-name
 ```
+
+# 7. Networking:
+
+### 7.1 Components of a Computer Network:
+* Two or more Computers/Devices
+* Cables as links between the devices.
+* A Network Interface Card (NIC) on each device.
+* Switches to connect multiple network interfaces together.
+* Routers to connect multiple networks together.
+* OS that running on the device that can analyze the data that it received on the network and present it to the user.
+
+### 7.2 OSI Model:
+* The `Open Systems Interconnection` (OSI) model is a conceptual model that describes the universal standard of communication functions of a telecommunication system or computing system, without any regard to the system's underlying internal technology and specific protocol suites.
+* The OSI model describes seven layer architecture that computer systems use to communicate over a network.
+* There are following 7 layers:
+
+<p align="center">
+<img src="images/OSI-7-layers.jpg.webp" width=400>
+</p>
+
+* The basic elements of a layered model are:
+  - services
+  - protocols
+  - and interfaces
+* A service is a set of actions that a layer offers to another(higher) layer.
+* A protocol is a set of rules that a layer uses to exchange information.
+* An interface is communication between the layers.
+
+* ***1. Physical Layer:***
+  - The physical layer is responsible for the physical cable or wireless connection between network nodes. 
+  - It defines the connector, the electrical cable or wireless technology connecting the devices, and is responsible for transmission of the raw data, which is simply a series of 0s and 1s, while taking care of bit rate control.
+* ***2. DataLink Layer:***
+  - The data link layer establishes and terminates a connection between two physically-connected nodes on a network. 
+  - It breaks up packets into frames and sends them from source to destination.
+  -  This layer is composed of two parts, Logical Link Control (LLC), which identifies network protocols, performs error checking and synchronizes frames. 
+  -  Media Access Control (MAC) which uses MAC addresses to connect devices and define permissions to transmit and receive data.
+* ***3. Network Layer:***
+  - The network layer has two main functions. One is breaking up segments into network packets, and reassembling the packets on the receiving end. 
+  - The other is routing packets by discovering the best path across a physical network. 
+  - The network layer uses network addresses (typically Internet Protocol addresses) to route packets to a destination node.
+* ***4. Transport Layer:***
+  - The transport layer takes data transferred in the session layer and breaks it into “segments” on the transmitting end. 
+  - It is responsible for reassembling the segments on the receiving end, turning it back into data that can be used by the session layer. 
+  - The transport layer carries out flow control, sending data at a rate that matches the connection speed of the receiving device, and error control, checking if data was received incorrectly and if not, requesting it again.
+* ***5. Session Layer:***
+  - The session layer creates communication channels, called sessions, between devices. 
+  - It is responsible for opening sessions, ensuring they remain open and functional while data is being transferred, and closing them when communication ends. 
+  - The session layer can also set checkpoints during a data transfer—if the session is interrupted, devices can resume data transfer from the last checkpoint.
+* ***6. Presentation Layer:***
+  - The presentation layer prepares data for the application layer. 
+  - It defines how two devices should encode, encrypt, and compress data so it is received correctly on the other end. 
+  - The presentation layer takes any data transmitted by the application layer and prepares it for transmission over the session layer.
+* ***7. Application Layer:***
+  - The application layer is used by end-user software such as web browsers and email clients. 
+  - It provides protocols that allow software to send and receive information and present meaningful data to users. 
+  - A few examples of application layer protocols are the Hypertext Transfer Protocol (HTTP), File Transfer Protocol (FTP), Post Office Protocol (POP), Simple Mail Transfer Protocol (SMTP), and Domain Name System (DNS).
+
+* A chart of all the layers and their protocols, and devices/application is given below:
+
+<p align="center">
+<img src="images/networklayers.png" width=500>
+</p>
+
+
+### 7.3 Understanding Networks and IP:
+* ***Classification of Network by Geography:***
+  - LAN 
+  - WAN
+  - MAN - Metropolitan Area Network
+  - CAN - Campus Area Network/Intranet
+  - PAN - Personal Area Network
+
+*  ***Switches:***
+  - Switches facilitate the sharing of resources by connecting together all devices, including computers, printers, servers and other devices on the same network. 
+  - Switches connects multiple devices together.
+
+* ***Routers:***
+  - Routers connect multiple networks together.
+  - A router receives and send data on the networks. Routers are often confused with network hubs, modems, or network switches. 
+  - However routers can combine multiple networks together.
+
+* The router in our home network is connected to our LAN our home network and WAN i.e. the internet. That router is not just a router it contains a switch as well. 
+
+* ***IPv4:***
+  - The IP address usually refers to a IPv4 address.
+  - IPv4 is a 32-bit binary number, which is often represented in decimal as `192.168.10.1`. 
+  - Each number separated by decimal points is called an octet, which is an 8 bit number having values between 0 and 255.
+
+* ***Public IPs:***
+  - Public IP address of a system is the IP address that is used to communicate outside the network. 
+  - A public IP address is basically assigned by the ISP (Internet Service Provider). 
+  - It is used to get internet service.
+  - Public IP uses a numeric code that is unique and cannot be used by other.
+  - Public IP does not require a network translation.
+  - 
+
+* ***Private IPs:***
+  - Private IP address of a system is the IP address that is used to communicate within the same network. 
+  - Using private IP data or information can be sent or received within the same network. 
+  - It works only on LAN
+  - Private IP uses numeric code that is not unique and can be used again.
+  - Private IP addresses require NAT to communicate with devices
+  - Range: Besides private IP addresses, the rest are public.
+
+```
+Class A: 10.0.0.0 – 10.255.255.255, 
+Class B: 172.16.0.0 – 172.31.255.255, 
+Class C: 192.168.0.0 – 192.168.255.255 
+```
+
+### 7.4 Protocols and Ports:
+* In the networking and communication area, the protocol is the formal specification that define the procedures that must be followed when transmitting or receiving data.
+* Protocols define the format, timing, sequence, and error checking of data used on the network.
+* Some examples of protocols are HTTP, FTP, SSH etc.
+* The protocols of layer 4 i.e. the Transport Layer are TCP and UDP protocol, all the other protocols that we see in layer five, six and seven are divided in between these two.
+* The comparison chart of TCP and UDP protocols is given below:
+
+<p align="center">
+<img src="images/tcp_udp.png" width=500>
+</p>
+
+* The protocols and port numbers chart is given below:
+
+<p align="center">
+<img src="images/COMMON-TCP-IP-WELL-KNOWN-PORT-NUMBERS-TABLE.jpg" width=500>
+</p>
+
+* The comparison between OSI Model and TCP/IP is given below:
+
+<p align="center">
+<img src="images/OSI-vs.-TCPIP-models.jpg.webp" width=500>
+</p>
