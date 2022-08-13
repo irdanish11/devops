@@ -287,3 +287,11 @@ kubectl rollout history deployment/first-app --revision=1
 ```bash
 kubectl rollout undo deployment/first-app --to-revision=1
 ```
+
+* Until now whatever we have done is by `imperative` approach next we'll do everything by using `declarative` approach.
+* Now let's cleanup what we've created until now by using following commands:
+  
+```bash
+kubectl delete service first-app
+kubectl delete deployment first-app
+```
