@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: second-app-deployment
+  group: example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: second-app
+      tier: backend
+  template: 
+    metadata:
+      labels:
+        app: second-app
+        tier: backend
+    spec:
+      containers: 
+        - name: second-node-app
+          image: irdanish11/kub-first-app-01:2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 5
+            initialDelaySeconds: 5
+        #- name: python-app
+        #  image: irdanish11/kub-second-app:2

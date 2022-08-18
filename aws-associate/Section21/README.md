@@ -252,3 +252,12 @@ aws lambda invoke --function-name demo-lambda --cli-binary-format raw-in-base64-
 * An S3 bucket will have a new file event to lambda function and then the lambda function will process the file and put the metadata into DynamoDB Table or even a Table in RDS Database.
 
 
+### 21.9 Lambda Event Source Mapping:
+* Lambda Event Source Mapping is the last category of how Lambda can process events in AWS other were Lambda Synchronous and Asynchronous Invocations.
+* Lambda Event Source Mapping is a way to map an event source to a Lambda function.
+* Lambda Event Source Mapping applies to 
+  - Kinesis Data Streams
+  - SQS and SQS FIFO Queue
+  - DynamoDB Streams
+* The common denominator for all event sources is that Lambda need to be pooled from the source.
+* In this case Lambda Function is invoked synchronously.

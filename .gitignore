@@ -6,3 +6,4 @@ ops/VProfileProject/vprofile-project/vagrant/Manual_provisioning/.vagrant
 *.pdf
 *.log
 ops/VProfileProject/vprofile-project/vagrant/Automated_provisioning/.vagrant
+*.DS_Store

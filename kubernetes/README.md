@@ -109,7 +109,7 @@
 ### 2.1 Kubernetes doesn't manage the infrastructure:
 * Kubernetes does not manage the infrastructure e.g. setting up VMs, keeping them update and maintaining them.
 * Or setting up master and worker nodes, these are the things we need to do either manually or by using a tool like `kubermatic` or by using a kubernetes managed service by a cloud provider such as Amazon EKS.
-* Followin is the comparison what Kubernetes can do and what we need to do.
+* Following is the comparison what Kubernetes can do and what we need to do.
 
 <p align="center">
 <img src="images/kubernetes_not_manage_infra.png" width=600>
@@ -143,7 +143,11 @@ kubectl create deployment first-app --image=irdanish11/kub-first-app-01
 kubectl get deployment
 kubectl get pods
 ```
+* To view the minikube dashboard, run the following command
 
+```bash
+minikube dashboard
+```
 
 ### 2.4. Kubernetes Services:
 * When we create deployment object, at that time we can't reach the Pod or the container running inside the container.
@@ -281,7 +285,7 @@ kubectl rollout history deployment/first-app --revision=1
 ```
 
 * The `--revision` flag specifies the revision of the deployment we want to see the history of.
-* We can see that revision 1 is our orignal deployment.
+* We can see that revision 1 is our original deployment.
 * Now let's say we want to go back to the original deployment to do that we just need to use the `--to-revision` flag and provide the revision identifier to the flag along with our `rollout undo` command.
 
 ```bash
@@ -295,3 +299,273 @@ kubectl rollout undo deployment/first-app --to-revision=1
 kubectl delete service first-app
 kubectl delete deployment first-app
 ```
+
+### 2.8. Imperative vs Declarative Approach:
+* Until now whatever we have done is by `imperative` approach, by typing commands individually.
+* As in the case of running docker containers manually bt typing commands and providing different configuration flags which was time consuming, so to solve that problem we have used `docker-compose` to define all the configurations to run a container in a `docker-compose.yml` and then just do `docker compose up` to start the container/s.
+* Now we are facing similar sort of problem that now we have to type the commands using `kubectl` and we want a similar solution to `docker-compose`. 
+* We need a file where we can define our `deployment` and `service` configurations and then apply that file to our Kubernetes file.
+* Kubernetes provides us such a file called `Resource Definition` file. We can define different objects that Kubernetes understand e.g. `deployment`, `service`, `pod`, `ingress`, `configmap`, `secret`, etc.
+* Following is an example of a `Resource Definition` file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
+* It creates a ReplicaSet to bring up three `nginx` pods.
+* After defining the `Resource Definition` or `config` file we can use the following command to apply the file to our Kubernetes cluster:
+
+```bash
+kubectl apply -f <name-of-config-file>.yaml
+```
+* This `config` file is used to define our desired target state and whenever we apply it to our cluster, Kubernetes will take the desired state and make it our current state by creating/removing/updating the objects defined in the file.
+
+### 2.9. Creating a Deployment Configuration file:
+* The first thing we need to define in  configuration file is `apiVersion`. To do that the best practice is that we checkout the docs to find out the version of the API e.g. `apiVersion: v1`.
+* The second thing we need to define is the `kind`, which is the type of the object we want to create. The possible values for kind can be `Pods`, `Deployment`, `Service`, `Ingress`, `ConfigMap`, `Secret`, etc an example would be `kind: Deployment`. For more details visit [documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#deployment-v1-apps).
+* The next thing we add is the `metadata` section, which is used to define the metadata of the object. It's a nested yaml object. We can define different types of values for the `metadata` section, which are related to our configuration. For further detail visit [documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta). An example would be:
+
+```yaml
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+```
+
+* Next we need to add the specification of the object by using `spec`. Here we defined the different behavior and needs of the defined object. In our case we are creating the `Deployment` object in this example.
+
+
+* In spec for [Deployment](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#deploymentspec-v1-apps) object we can define following things:
+  - `replicas`: Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1.
+  - `selector`: Next we need to define another important thing and that is the `selector` field which is a map of key-value pairs. The key either should be `matchLabels` or `matchExpression`. 
+    1. Selector is label selector for pods. Existing ReplicaSets whose pods are selected by this will be the ones affected by this deployment. It must match the pod template's labels.
+    2. Here we'll use `matchLabels` which is a map of key-value pairs of the pod labels because we want to select only those pods for this deployment that are defined in this deployment.
+    3. Deployments are dynamic objects that means they have the ability to scale, so the deployments continuously look for the pods that it should control.
+    4. That is why we need to provide labels of our pods to the selector so that our deployment should know that these are the pods that I should control.
+    5. We need to define map of key-value pairs under the `matchLabels`, the key-value pairs should be the same as defined under `labels` key of `template` in `spec` field. 
+
+  - `template`: Template describes the pods that will be created. The template is a nested object which requires `metadata` and `spec` fields to be defined. 
+    1. One important thing here is that we don't need to define the `kind` field here because for the `Deployment` object by default Kubernetes consider it to be a `Pod` object. That's why its type is `PodTemplateSpec`. For further details visit [documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podtemplatespec-v1-core).
+    2. In the `metadata` field of `template` we can defined `labels` field which is a map of key-value pairs. Both the key and the value is up to the developer to choose.
+    3. The `spec` field of `template` is a nested object of type [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podspec-v1-core). Under the `spec` we will define [containers](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core) field which is a list of containers belonging to the pod. Containers cannot currently be added or removed. There must be at least one container in a Pod. Cannot be updated. 
+  - We can also define other fields for that check the documentation for [Deployment](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podspec-v1-core) object.
+  
+
+* Following is our `Deployment` configuration file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: second-app-deployment
+  group: example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: second-app
+      tier: backend
+  template: 
+    metadata:
+      labels:
+        app: second-app
+        tier: backend
+    spec:
+      containers: 
+        - name: second-node-app
+          image: irdanish11/kub-first-app-01:2
+        #- name: python-app
+        #  image: irdanish11/kub-second-app:2
+``` 
+* Now we can apply this configuration file to our cluster by using the `kubectl apply` command and specifying the `-f` flag provided with the path to the configuration file.
+
+```bash
+kubectl apply -f <name-of-config-file>.yaml
+```
+
+* We can provide multiple configuration files by providing specifying multiple `-f` flags.
+
+```bash
+kubectl apply -f <name-of-config-file-1>.yaml -f <name-of-config-file-2>.yaml
+```
+
+### 2.10. Defining Service object:
+* Until now we have created our deployment but we can't reach our application because we haven't exposed it yet.
+* To do that we need to define `Service` object.
+* Now we'll create our `service.yaml` file which will be very similar to our `deployment.yaml` file. 
+* Obviously the first thing we need to define is the `apiVersion` which in the case of `Service` will be `v1` only as we can check from the [documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#service-v1-core) as well.
+* This because the group for the `Services` is `core` that means we don't need to specify `core/v1` instead we can specify `v1` only.
+* Then we'll define `kind` which would be the `Service`.
+* In the selector field we should define which pods should be connected to this service. The `selector` is a map of key-value pair i.e. the `labels` that we have defined under the `metadata` field of `template` of `spec` field in the `Deployment` object.
+* We'll just copy those tags and paste them as follows:
+
+```yaml
+selector:
+    app: second-app
+```
+
+* Note here we don't need to specify `matchLabels` or `matchExpression` because the `selector` field in the Service object only takes labels only.
+* Another thing to note here is that here we only specified one label which is `app: second-app`, this because here we want that all of the pods that have the label of `app` and the value of `second-app` should be connected to this service and not just only the pod with `backend` label. Because we can have multiple pods that can have `app: second-app` label such as pods of frontend `tier` or maybe another backend `tier`.
+* When we were using imperative approach to define a service we've defined `ports` and `type` so here we should do that as well.
+* The [ports](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#serviceport-v1-core) should be a list of map of key/value pairs, each map should at least contain  following three values:
+  - `protocol`: The IP protocol for this port. Supports "TCP", "UDP", and "SCTP". Default is TCP. 
+  - `port`: The port that will be exposed by this service.
+  - `targetPort`: Number or name of the port to access on the pods targeted by the service i.e. the port on which our app is running. Number must be in the range 1 to 65535.
+
+* An example of ports is given below:
+
+```yaml
+ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  - protocol: TCP
+    port: 443
+    targetPort: 443
+```
+
+* Next we need to define the `type` option, type determines how the Service is exposed. Defaults to ClusterIP. Valid options are ExternalName, ClusterIP, NodePort, and LoadBalancer. "ClusterIP" allocates a cluster-internal IP address for load-balancing to endpoints. `LoadBalancer` builds on NodePort and creates an external load-balancer (if supported in the current cloud) which routes to the same endpoints as the clusterIP. In local case it'll be using load balancer of minikube.
+* An example `service.yaml` file is given below:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  group: example
+spec:
+  selector:
+    app: second-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
+```
+
+### 2.11. Updating and Deleting Resources:
+* To update or make changes to our Deployments, Services e.t.c all we need is to change our `Resource Definition` files as per our need and then just simply apply the newly changed `Resource Definition` files.
+* Let's say we want to scale our deployment to the 3 pods, we'll just update our `replicas` field in the `deployment.yaml` and apply it and we'll have new deployment with 3 pods.
+* If we want to delete any of the objects that we have created (e.g. Deployment, Service etc) we can use the `kubectl delete` command along with `-f` flag which points the path to the config file, to delete the objects in that file.
+* Following is an example to delete command:
+
+```bash
+kubectl delete -f=<name-of-config-file>.yaml -f=<name-of-config-file-2>.yaml
+```
+
+### 2.12. Multiple vs Single Config Files:
+* We can merge multiple files into one files as in our case we say that the Resource Definitions in the `services.yaml` file is closely related to the Resource Definition in the `deployment.yaml` file.
+* We can merge them into one file. 
+* When merging multiple Resource Definitions into one single file we need to use three hyphens `---` as a separator between each Resource Definition.
+* An example config file which contains the `Service` and `Deployment` Resource Definitions is given below:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  group: example
+spec:
+  selector:
+    app: second-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: second-app-deployment
+  group: example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: second-app
+      tier: backend
+  template: 
+    metadata:
+      labels:
+        app: second-app
+        tier: backend
+    spec:
+      containers: 
+        - name: second-node-app
+          image: irdanish11/kub-first-app-01:2
+        #- name: python-app
+        #  image: irdanish11/kub-second-app:2
+```
+* One thing to note here is that we have moved the `Service` resource definition to the top of the file because the resource definition are created in top to bottom fashion.
+* As our `Service` object is dynamic and it will look for all the pods with labels of `app: second-app` in the cluster it makes sense that it should get created first.
+* Whenever a new pod will created with the label of `app: second-app` it will be automatically added to this `Service`.
+
+
+### 2.13. Labels and Selectors:
+* Selectors are used to connect other resources to a resource e.g. connecting pods to deployment or a service.  
+* There are multiple types of selector simple ones as we've used in service and the modern ones in the deployment e.g. `matchLabels.
+* We can delete an object by using its labels as well, we need to provide `-l` flag and provide it with appropriate labels.
+
+```bash
+kubectl delete -l group=example
+```
+
+* The above commands will delete all the resources associated to the `group: example` to avoid that we can define services that we want to delete that have these labels.
+
+```bash
+kubectl delete deployments,services -l group=example
+```
+
+* We can also delete a service by its name just using the following as we did in imperative approach.
+
+```
+kubectl delete second-app-deployment
+```
+
+
+### 2.14. Liveness Probes
+* How Kubernetes check whether the pods or containers in the pods are healthy or not. Until we have been using the default behavior for liveness probes.
+* But this is something that we can configure because this matters in certain applications.
+* We can change the default behavior of a container by adding [livenessProbe](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#probe-v1-core) key, which is available under [containers](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core) as `spec > template > spec > containers` field.
+  
+* Probe describes a health check to be performed against a container to determine whether it is alive or ready to receive traffic.
+* There are multiple methods the way we can probe a container to probe for liveness e.g.  `httpGet`, `tcpSocket`, `grpc`, `timeoutSeconds`, `periodSeconds` etc.
+* Here we'll do [httpGet](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#httpgetaction-v1-core) probe, and we need to specify the `path` and `port` of the service that we want to probe, and apart from that we'll also use `periodSeconds` probe to define the interval of time between two successive probes and `initialDelaySeconds` to define the time to wait before the first probe.
+* An example is given below:
+
+```yaml
+containers: 
+  - name: second-node-app
+    image: irdanish11/kub-first-app-01:2
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 8080
+      periodSeconds: 5
+      initialDelaySeconds: 5
+```
+
+* We can also provide docker container specific information such as providing the Arguments to the entry point, environment variables, volumes etc. For this information visit the documentation for [containers](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core).
