@@ -569,3 +569,123 @@ containers:
 ```
 
 * We can also provide docker container specific information such as providing the Arguments to the entry point, environment variables, volumes etc. For this information visit the documentation for [containers](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core).
+
+
+# 3. Managing Data & Volumes with Kubernetes:
+
+### 3.1. Kubernetes Volumes:
+* Kubernetes can mount volumes into containers.
+* A broad variety of volume types/drivers are supported:
+  - Local Volumes (i.e. on Nodes).
+  - Cloud-provider specific volumes.
+* Volume lifetime depends on the Pod lifetime, because the Volumes are the part of the Pods which are started and managed by Kubernetes, volumes are Pod specific.
+  - Volumes survives Container restarts and removals.
+  - Volumes are removed when the Pod is destroyed.
+* Kubernetes Volumes are different to the Container Volumes, a comparison is given below:
+
+<p align="center">
+<img src="images/volumes-kubernetes-docker.png" width=500>
+</p>
+
+* There are different types of Kubernetes Volumes, as they these volumes are not a directory on our local machines. Learn more about [Volumes](https://kubernetes.io/docs/concepts/storage/volumes/) from docs.
+* We'll be looking at following types of Kubernetes Volumes:
+  - [csi](https://kubernetes.io/blog/2019/01/15/container-storage-interface-ga/)
+  - [emptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir)
+  - [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath)
+  - [nfs](https://kubernetes.io/docs/concepts/storage/volumes/#nfs)
+
+### 3.2. emptyDir Volume:
+* We have added `/error` path in our node app so that whenever we go to that path the app crashes and container restarts, this will help understand concept of Kubernetes Volumes.
+* We need to define the [Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core) where we define the spec of the [pod](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podspec-v1-core) i.e. in the `deployment.yaml` file under `Deployment > spec > template > spec > volumes`.
+* Volumes is a List of volumes that can be mounted by containers belonging to the pod.
+* Each list element should be a map of key-value pairs of the form:
+
+```yaml
+  - name: <name>
+    <type_of_the_volume>: <volume_config_or_{}_for_defaults>
+```
+
+* Type of the volumes can be `emptyDir`, `hostPath` etc. An example of Volume configuration is given below:
+
+```yaml
+  - name: story-volume
+    emptyDir: {}
+```
+
+* In above Volume configuration the `{}` is used to define the default values for the emptyDir volume.
+* We have used [emptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) type of volume, an [emptyDir](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#emptydirvolumesource-v1-core) volume is first created when a Pod is assigned to a node, and exists as long as that Pod is running on that node. As the name says, the `emptyDir` volume is initially empty. 
+* All containers in the Pod can read and write the same files in the emptyDir volume, though that volume can be mounted at the same or different paths in each container.
+* When a Pod is removed from a node for any reason, the data in the emptyDir is deleted permanently.
+* A container crashing does not remove a Pod from a node. The data in an emptyDir volume is safe across container crashes.
+* Next we need to bind our volumes to our [containers](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core). That can be configured in the `deployment.yaml` file under `Deployment > spec > template > spec > containers > volumeMounts`.
+* We can bind volume to a [container](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core) by using `volumeMounts` which defines Pod volumes to mount into the container's filesystem. Cannot be updated.
+* [volumeMounts](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core) should be a List. Each list element should be a map of key-value pairs of the form:
+
+```yaml
+  - name: <name>
+    mountPath: <path>
+``` 
+
+* The `name` is the name of the volume (the volume name should be same as defined in the Volumes section) that we want to mount and the `mountPath` is the path in our container's filesystem where we want to mount the volume.
+
+### 3.3. hostPath Volume:
+* As the volumes are tightly coupled with pods, so in case if our container crashes and being restarted, we'll not be able to access the volume. 
+* Even we have multiple replicas for the same pod, we'll not be able to access the volume when we use `emptyDir` type of volume, because the other pods doesn't know about that volume. 
+* Because the `emptyDir` type of volume creates `emptyDir` volume per pod.
+* There are a lot of ways to handle this but one way to handle this is by using [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) type of volume.
+* A hostPath volume mounts a file or directory from the host node's filesystem into your Pod. 
+* That means that the any other on the same machine, can access the volume, & this way multiple pods can access the shared volume.  
+* [hostPath](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#hostpathvolumesource-v1-core) is somewhat similar to `bindMount` in the sense that it mounts a file or directory from the host node's filesystem into your Pod.
+* In case of `hostPath` type of volume, we will configure it by providing the `path` of the machine/node that would be mounted as a volume and the `type` which should define whether the directory already exists then use `Directory` or if not then create directory by using `DirectoryOrCreate`.
+* Following is an example of `hostPath` volume configuration:
+
+```yaml
+  - name: story-volume
+    hostPath:
+      path: /data
+      type: DirectoryOrCreate
+```
+* Apart from that we don't need to configure or change anything.
+
+
+### 3.4. CSI Volumes:
+* [CSI](https://kubernetes.io/blog/2019/01/15/container-storage-interface-ga/) is a new storage interface for Kubernetes that allows for the definition of storage resources in a declarative manner. 
+* CSI was developed as a standard for exposing arbitrary block and file storage storage systems to containerized workloads on Container Orchestration Systems (COs) like Kubernetes.
+* With the adoption of the Container Storage Interface, the Kubernetes volume layer becomes truly extensible. 
+* Using CSI, third-party storage providers can write and deploy plugins exposing new storage systems in Kubernetes without ever having to touch the core Kubernetes code.
+* This gives Kubernetes users more options for storage and makes the system more secure and reliable.
+* Some Volume types that uses CSI driver are:
+  - [AWS EBS CSI migration](https://kubernetes.io/docs/concepts/storage/volumes/#aws-ebs-csi-migration)
+  - [Amazon EFS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/efs-csi.html)
+  - [AWS EFS CSI Driver Github](https://github.com/kubernetes-sigs/aws-efs-csi-driver)
+  - [azureDisk  CSI migration](https://kubernetes.io/docs/concepts/storage/volumes/#azuredisk-csi-migration)
+  - [azureFile CSI migration](https://kubernetes.io/docs/concepts/storage/volumes/#azurefile-csi-migration)
+
+### 3.5. Kubernetes Persistent Volumes:
+* The Volumes that we have seen until now are destroyed once the pod is removed or terminated.
+* Same is the case when we scale our pods up the newly created pods dose not have the access to the volumes, `hostPath` solves this problem but for one thing it is not a secure method secondly it does not work if newly created pod is created on some other node (i.e. some other machine) than the one that was used to create the volume.
+* Often we need pod or node independent volumes e.g. in the case of container having database or a container writing files.
+* To solve these volumes Kubernetes provide us with pod/node independent volumes which are called [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
+* A lot of the volume types that we have seen earlier are also persistent volumes e.g. `AWS EBS CSI migration` or `azureDisk CSI migration` etc, because they provide independent storage.
+* But the Kubernetes `Persistent Volumes (PV)` is not only about independent storage but the Persistent Volumes are detached from the Pod and independent of the pod lifecycle.
+* It gives more power as cluster administrator and we don't need to configure it multiple times in different pods or deployments, instead we'll define it once and use it everywhere.
+* A PersistentVolume (PV) is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+*  It is a resource in the cluster just like a node is a cluster resource.
+*  `PVs` are volume plugins like Volumes, but have a lifecycle independent of any individual Pod that uses the PV.
+*  A `PersistentVolumeClaim (PVC)` is a request for storage by a user. It is similar to a Pod. 
+*  Pods consume node resources and PVCs consume PV resources.
+
+<p align="center">
+<img src="images/pv1.png" width=400>
+</p>
+
+*  Pods can request specific levels of resources (CPU and Memory). Claims can request specific size and access modes (e.g., they can be mounted ReadWriteOnce, ReadOnlyMany or ReadWriteMany, see [AccessModes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes)).
+*  A working example of [PV](https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/)
+*  While PersistentVolumeClaims allow a user to consume abstract storage resources, it is common that users need PersistentVolumes with varying properties, such as performance, for different problems. 
+*   Cluster administrators need to be able to offer a variety of PersistentVolumes that differ in more ways than size and access modes, without exposing users to the details of how those volumes are implemented. For these needs, there is the StorageClass resource.
+
+<p align="center">
+<img src="images/pv2.png" width=500>
+</p>
+
+* Some types of PV [types](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes).

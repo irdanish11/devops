@@ -61,3 +61,52 @@
 * So we can go to `Package_App` job and their we need to `configure` it and in the `Post Build Actions` field select on `Build other projects` and under the `Projects to build field` add `Deploy_Application_Staging_Env` and check `Trigger only if build is stable` option and click Save.
 * Apart from that we can configure `Poll SCM` or `GitHub hook trigger for GITScm polling` as `Build Triggers` for our first job, so that whenever code is pushed to the repository, the first job will be triggered.
 * Now whenever we trigger the `Package_App` job, and once it's completed it will trigger the `Deploy_Application_Staging_Env` job.
+
+
+### Build Pipeline Plugin:
+* The `Build Pipeline` plugin is a plugin that allows you to create a build pipeline and the plugin provides a `Build Pipeline View` of upstream and downstream connected jobs.
+* The plugin gives us the ability to form a chain of jobs based on their upstream/downstream dependencies.
+* We can create multiple jobs in a pipeline which will have the parallel upstream or downstream jobs.
+* Downstream jobs will be triggered automatically when the upstream jobs are completed successfully, or by suitable authorized user manually triggering it.
+* The manual triggers are only available with the `Build Pipeline Plugin`, Jenkins by default does not have the ability to manually trigger the downstream jobs by manual approval.
+* An example of `Build Pipeline` is shown below:
+
+<p align="center">
+<img src="images/build-pipeline.png">
+</p>
+
+* Install the `Build Pipeline` plugin form manage jenkins page.
+* After installing the plugin, go to Dashboard and click on the `+` button to create a new view, now we will have one more option called `Build Pipeline View`.
+* Check the `Build Pipeline View` and provide the appropriate name and click ok.
+* Then provide `Build Pipeline View Title`, after that click on `Select Initial Job` and select the `Package_Application` job and click ok.
+* This will create the `Build Pipeline View` for our two jobs.
+
+
+
+# 5. Jenkins Job DSL(Domain Specific Language):
+
+### 5.1. Jenkins Job DSL:
+* With the traditional way of creating jenkins jobs it becomes very difficult to create complex jobs and to manage them.
+* We can't perform audit what changes were made by whom, apart from that if something goes wrong we don't have options of Rollbacks.
+* Creating jobs manually is a very tedious task and error prone that is why we need code to configure the jobs.
+* Jenkins Job DSL is a DSL (Domain Specific Language) that allows you to create jobs in a declarative way (i.e. we can program Jenkins jobs).
+* Jenkins `Job DSL` plugin is used to define jobs in programmatic way.
+* DSL stands for Domain Specific Language, Jenkins DSL uses groovy as a programming language.
+* User can describe the jobs using Groovy Base Script.
+* We can create multiple jobs with Jenkins DSL plugin and it comes with lot of benefits like
+  - Version Control
+  - Audit History
+  - Peer Review
+  - Rollback
+  - BackUp
+
+
+### 5.2. Jenkins DSL Job Example:
+* To use DSL Job first we need to create a `Seed Job`. It is used by Jenkins `Job DSL` plugin to create the DSL job.
+* The Seed Job is a Jenkins job which runs DSL scripts, and then generate new jobs.
+* The Seed Job must be a Freestyle Project, it can't be a Pipeline or Multi Configuration Job.
+* In the Seed Job will add the `Process Job DSL` Build Step. 
+* This step takes the DSL scripts and generates the configured Job. 
+* Install the `Job DSL` plugins from `Manage Jenkins > Manage Plugins > Available`.
+* We can learn how to write groovy scripts from [Jenkins Job DSL API](https://jenkinsci.github.io/job-dsl-plugin/).
+* To provide credentials in DSL jobs visit [Credentials](https://github.com/jenkinsci/job-dsl-plugin/wiki/Handling-Credentials) documentation.

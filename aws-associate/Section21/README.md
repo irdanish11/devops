@@ -1,4 +1,6 @@
-## 21.1 Serverless:
+# 21. AWS Lambda
+
+### 21.1 Serverless:
 * Serverless is a new paradigm in which the developes don't have to manage servers.
 * Serverless doesn't mean that there are no servers but it means that we developers don't have to manage or provision them.
 * Serverless in AWS:
@@ -13,7 +15,7 @@
   - Step Functions
   - Fargate
 
-## 21.2 AWS Lambda Overview:
+### 21.2 AWS Lambda Overview:
 #### Amazon EC2: 
 - Virtual Servers in the Cloud.
 - Limited by CPU and RAM.
@@ -83,7 +85,7 @@
   * And 3,200,000 seconds if RAM is 128MB.
   * After that $1 for 600,000 GBs.
 
-## 21.3 Lambda - Synchronous Invocation:
+### 21.3 Lambda - Synchronous Invocation:
 - We are doing synchronous invocations when we are invoking lambda functions from CLI, SDL, API Gateway, Application Load Balancer.
   * Synchronous means we are waiting for results and then the results will be returned.
   * Error handling must happen on client side (retries, exponential backoff etc).
@@ -246,7 +248,7 @@ aws lambda invoke --function-name demo-lambda --cli-binary-format raw-in-base64-
 * We have a simple use case of S3 Event Pattern for MetaData Sync.
 
 <p align="center">
-<img src="images/lambda-s3-event-notification2.png">
+<img src="images/lambda-s3-event-notification2.png" width=500>
 </p>
 
 * An S3 bucket will have a new file event to lambda function and then the lambda function will process the file and put the metadata into DynamoDB Table or even a Table in RDS Database.
@@ -261,3 +263,84 @@ aws lambda invoke --function-name demo-lambda --cli-binary-format raw-in-base64-
   - DynamoDB Streams
 * The common denominator for all event sources is that Lambda need to be pooled from the source.
 * In this case Lambda Function is invoked synchronously.
+* If we configure lambda to read from Kinesis, then an Event Source Mapping will be created internally which will be responsible for polling the data from Kinesis and getting the results back in the form of Batch.
+* When Event Source Mapping will have some data it will invoke the Lambda Function synchronously with an event batch, as shown below.
+
+<p align="center">
+<img src="images/lambda-event-mapping.png" width=500>
+</p>
+
+* There are two categories of event source mapper:
+  - Streams 
+  - Queues
+  
+* `Lambda Event Source Mapping Streams` apply to Kinesis Data Streams and DynamoDB Streams.
+* In case of streams Event Source Mapping create an iterator for each `shard` (Kinesis shard or DynamoDb shard), and process items in order at shard level.
+* The reads can be performed from start with new items, or from the beginning or from a specific timestamp. 
+* Processed items aren't removed from the stream (so other consumers can read them).
+* For `Low traffic`: use batch window to accumulate records before processing to invoke Lambda Function efficiently.
+* For `High traffic`: setup lambda to process multiple batches in [parallel](https://aws.amazon.com/blogs/compute/new-aws-lambda-scaling-controls-for-kinesis-and-dynamodb-event-sources/) at shard level, as shown below.
+
+<p align="center">
+<img src="images/lambda-event-mapping-2.png" width=500>
+</p>
+
+  - Up to 10 batches per shard.
+  - in-order processing is still guaranteed for each partition key but not at the shard level instead each key within the shard will be processed in-order.
+
+* By default, if function returns an error the entire batch is reprocessed until the function succeeds, or the items in the batch expire.
+* To ensure the in-order processing, processing for the affected shard is paused until the error is resolved,
+* We can configure the event source mapping to:
+  - discard old events.
+  - restrict the number of retries.
+  - split the batch on error (to work around Lambda timeout issues).
+* Discarded events can go to a Destination.
+
+
+* `Lambda Event Source Mapping Queues` apply to SQS and SQS FIFO Queue.
+* The workflow is somewhat similar to the Streams case, the Lambda Event Source Mapping will poll the SQS/SQS FIFO Queue and whenever a Batch of data is returned our lambda function will be invoked synchronously.
+* Event Source Mapping will poll SQS using `Long Polling` which is efficient.
+* Specify batch size of 1-10 messages.
+* AWS recommends to set the queue visibility timeout to 6x the timeout of our Lambda function.
+* To use DLQ, the DLQ should be set-up on the SQS Queue not Lambda Function because DLQ for Lambda is only for async invocations and these are synchronous invocations.
+
+* Lambda also supports in-order processing for FIFO queues scaling up to the number of active message groups.
+* For standard queues, items aren't necessarily processed in order.
+* For standard queues, the Lambda scales up to process the queue messages as quickly as possible.
+* When an error occurs, batches are returned to the queue as individual items and might be processed in a different grouping than the original batch.
+* Occasionally, the event source mapping might receive the same item from the queue twice, even if no function error occurred, so the Lambda function should be idempotent.
+* Lambda deletes items from the queue after processing.
+* We can configure the source queue to send items to a DLQ if they can't be processed.
+
+* ***Lambda Event Mapper Scaling:***
+  - `Streams` get 1 Lambda invocation per stream shard.
+  - Or if we use parallelization, we can have up to 10 batches processed per shard simultaneously.
+  - For `SQS Standard` Lambda adds 60 more instances per minute to scale up.
+  - Up to 1000 batches of messages can be processed simultaneously.
+  - For `SQS FIFO` messages with the same GroupID are processed in order.   
+  - The Lambda function scales to the number of active message groups.
+
+### 21.10. AWS Lambda - Destinations:
+* In case of [asynchronous](https://docs.aws.amazon.com/lambda/latest/dg/invocation-async.html) and event source mapping it was very hard to tell wether the processing is successful or failed and it was difficult to retrieve data as well.
+* We can configure a Destination in AWS Lambda to send the result of asynchronous invocation or failure of Event Source Mapping to somewhere so we can check.
+* For async invocations we can define destinations for successful and failed event. For async invocations we have following destinations:
+  - Amazon SQS
+  - Amazon SNS
+  - AWS Lambda
+  - Amazon EventBridge bus
+* In case of async we can have two destinations one for success and one for failure.
+* The idea is when we invoke Lambda Function if the processing is succeeds we'll send it to successful event destinations if it fails then to a failed event destination.
+* AWS recommends to use destinations instead of DLQ (but both can be used at the same time) because destinations are newer and they allow for more targets, while DLQ only allows to send to SQS and SNS.
+
+<p align="center">
+<img src="images/destinations-aysnc.png" width=500>
+</ps> 
+
+* Destinations are used with `Event Source Mapping` only used when an event batch get discarded, because we can't process it and then we can send to following failed event destinations:
+  - Amazon SQS
+  - Amazon SNS
+* We can either set a failed destination in Lambda or we can setup a DLQ directly on SQS Queue. 
+
+<p align="center">
+<img src="images/destinations-event-source-mapping.png" width=500>
+</p>
