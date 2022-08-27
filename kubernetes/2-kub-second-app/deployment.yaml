@@ -15,9 +15,17 @@ spec:
       containers:
         - name: story
           image: irdanish11/kub-data-demo:1
+          env: 
+            - name: STORY_DIR
+              # value: story
+              valueFrom:
+                configMapKeyRef:
+                  name: data-store-env
+                  key: folder
           volumeMounts: 
             - mountPath: /app/story
               name: story-volume
       volumes:
         - name: story-volume
-          emptyDir: {} 
+          persistentVolumeClaim:
+            claimName: host-pvc

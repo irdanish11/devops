@@ -688,4 +688,152 @@ containers:
 <img src="images/pv2.png" width=500>
 </p>
 
-* Some types of PV [types](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes).
+* Some types of [PV](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes).
+
+
+### 3.6. Defining Persistent Volumes (PV):
+* Here we will use [hostPath](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#hostpathvolumesource-v1-core) type of volume to create a persistent volume ([PV](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolume-v1-core)).
+* The concepts of `hostPath` type of volume will replicate to the other types as well.
+* First we need to define `apiVersion`, `kind`, `metadata` and `spec` for the persistent volume e.g. as follows:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: host-pv
+```
+
+* Apart from a Volume type name (e.g. `hostPath`, `awsElasticBlockStore`, `azureDisk` etc) in [spec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolumespec-v1-core) of PV, we can also provide following fields:
+  - `accessModes`: accessModes contains all ways the volume can be mounted. [More info](https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes) 
+  - `capacity`: which defines the size of the volume i.e. capacity is the description of the persistent volume's resources and capacity e.g. `1 Gi`. [More info](https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity)
+  - `mountOptions`: mountOptions is the list of mount options, e.g. ["ro", "soft"]. Not validated - mount will simply fail if one is invalid. [More info](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options).
+  - `persistentVolumeReclaimPolicy`: persistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. [More info](https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming)
+  - `storageClassName`: storageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/).
+  - `volumeMode`: volumeMode defines if a volume is intended to be used with a formatted [filesystem](https://www.ibm.com/cloud/learn/file-storage) or to remain in raw [block](https://www.ibm.com/cloud/learn/block-storage) state. Value of Filesystem is implied when not included in spec, which defines the mode of the volume.
+
+* Now we will define the `spec` for the persistent volume e.g. as follows:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: host-pv
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  storageClassName: standard
+  hostPath:
+    path: /data
+    type: DirectoryOrCreate
+```
+
+* The access modes are:
+  - `ReadWriteOnce`: the volume can be mounted as read-write by a single node. ReadWriteOnce access mode still can allow multiple pods to access the volume when the pods are running on the same node.
+  - `ReadOnlyMany`: the volume can be mounted as read-only by many nodes.
+  - `ReadWriteMany`: the volume can be mounted as read-write by many nodes.
+  - `ReadWriteOncePod`: the volume can be mounted as read-write by a single Pod. Use ReadWriteOncePod access mode if you want to ensure that only one pod across whole cluster can read that PVC or write to it.
+
+* Now we can use this PV could be used by any pod in our application ny using PVC.
+
+
+### 3.7. Defining Persistent Volume Claims (PVC):
+* To use the PV we need to define PersistentVolumeClaims, now we'll configure [PVC](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolumeclaim-v1-core).
+* Just like any other we need to define `apiVersion`, `kind`, `metadata`, `spec` and one additional field that we can configure is `status` for the persistent volume claim.
+* The [PVCspec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolumeclaimspec-v1-core) can take following fields:
+  - `accessModes`: accessModes contains the desired access modes the volume should have, it should be a List/Array of strings. [More info](https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1)
+  - `volumeName`: volumeName is the binding reference to the PersistentVolume backing this claim i.e. the name of the Volume on which we want to make a claim. In Kubernetes we can claim volumes in different ways such as `Claiming By Resource` such that we don't just claim one specific PV, we can say we want PV with that much space and this configuration. This would be called `Dynamic Volume Provisioning` in Kubernetes. But right now we will only use `Static Volume Provisioning` where we will claim a specific PV.
+  - `storageClassNames`: storageClassName is the name of the StorageClass required by the claim. [More info](https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1)
+  - `resources`: resources represents the minimum resources the volume should have. The resources is counter part of `capacity` in the `spec` of `PV`. The amount of storage that we should claim here, must be available in the PV. We can request full storage of PV, but if we have multiple claims to the same PV we should claim less than the total storage. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. [More info](https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources)
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: host-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: host-pv
+```
+
+* Now we have configured the PVC, now we need to connect this PVC to our so that our PODs can make the claim to the PV.
+* For that we need to configure the `volumes` field in our [Deployment](2-kub-second-app/deployment.yaml) file and following lines under `volumes` key.
+
+```yaml
+volumes:
+  - name: story-volume
+    persistentVolumeClaim:
+      claimName: host-pvc
+```
+
+### 3.8. Understanding State:
+* State is the data created and used by the application that must not be lost.
+* There can be two types of data:
+  - User generated data such as user accounts etc, often stored in a database, but could also be files 
+  - Intermediate results derived by the app, often stored in memory, temporary database or files.
+* For second type of data its better to use POD specific volumes and for first type of data its better to use Persistent Volumes.
+
+
+### 3.9. Volumes vs Persistent Volumes:
+* Volumes are used to store data that is not persistent and is tied to the lifetime of the pod.
+* Persistent Volumes are used to store data that is persistent and is tied to the lifetime of the cluster.
+* Following diagram shows the difference between volumes and persistent volumes.
+
+<p align="center">
+<img src="images/volumes_vs_pv.png" width=600>
+</p>
+
+
+### 3.9. Environment Variables:
+* Environment variables are used to pass data to the container.
+* Just like Docker Containers, Kubernetes also allows us to configure environment variables.
+* We can set environment variables in the `spec` of `Container` which is in the `spec` of `Deployment` by using `env` field, and provide a List/Array of key value Map.
+* We need to define two key value pairs, name and the second is value.
+* For the first one the key should be the `name` and the value should be the name of the environment variable you want to set e.g. `name: MY_VAR`.
+* For the second one the key should be `value` and its value should be whatever the value you want to set for environment variable e.g. `value: "Hello World"`.
+* As example is given below:
+
+```yaml
+spec:
+  env:
+    - name: STORY_DIR
+      value: "story"
+```
+
+### 3.10. Environment Variables from ConfigMap:
+* A ConfigMap is an API object used to store non-confidential data in key-value pairs.
+* Pods can consume ConfigMaps as environment variables, command-line arguments, or as configuration files in a volume.
+* A ConfigMap allows us to decouple environment-specific configuration from your container images, so that your applications are easily portable.
+* Here's an example ConfigMap that has some keys with single values.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: data-store-env
+data:
+  folder: story
+  # key: value
+```
+
+* Once we define our configMap we can use the values defined in the configMap in our `Deployment` file as follows:
+
+```yaml
+spec:
+  env:
+    - name: STORY_DIR
+      valueFrom:
+        configMapKeyRef:
+          name: data-store-env
+          key: folder
+```
+
+* Here we are using `valueFrom` field and we are using `configMapKeyRef` to get the value from the configMap.
+* We will assign value of `folder` key (which is `story`) from `data-store-env` configMap to the `STORY_DIR` environment variable.
