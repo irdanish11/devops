@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-network-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users
+  template:
+    metadata:
+      labels:
+        app: users
+    spec:
+      containers:
+        - name: users
+          image: irdanish11/kube-demo-users:latest
+          env:
+            - name: AUTH_ADDRESS
+              value: "auth-service.default"
+              # value: "10.103.0.21"
+#        - name: auth
+#          image: irdanish11/kube-demo-auth:latest
