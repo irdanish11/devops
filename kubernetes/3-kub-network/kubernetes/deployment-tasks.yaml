@@ -16,5 +16,7 @@ spec:
         - name: tasks
           image: irdanish11/kube-demo-tasks:latest
           env:
+            - name: AUTH_ADDRESS
+              value: "auth-service.default"
             - name: TASKS_FOLDER
               value: tasks

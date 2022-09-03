@@ -344,3 +344,50 @@ aws lambda invoke --function-name demo-lambda --cli-binary-format raw-in-base64-
 <p align="center">
 <img src="images/destinations-event-source-mapping.png" width=500>
 </p>
+
+### 21.11. Lambda Execution Role:
+* ***Execution Roles:*** Grants the Lambda function permissions to AWS services/resources.
+* Sample managed policies for Lambda:
+  - AWSLambdaBasicExecutionRole - grants basic permissions to write logs to CloudWatch Logs.
+  - AWSLambdaKinesisExecutionRole - Read from Kinesis
+  - AWSLambdaDynamoDBExecutionRole - Read from DynamoDB Streams
+  - AWSLambdaSQSQueueExecutionRole - Read from SQS
+  - AWSLambdaVPCAccessExecutionRole - Deploy Lambda function in VPC
+  - AWSXRayDaemonWriteAccess - Upload traces data to X-Ray
+* When we use an `Event Source Mapping` to invoke our function, Lambda uses execution role to read event data. 
+* In case of `Event Source Mapping` the Lambda is used to read the event data, in case of other services Lambda function was invoked in other ways, that's why we don't need Execution Role in case of other services.
+* Best practice is to create one Lambda Execution Role per Lambda Function.
+
+* ***Resource Based Policies:***
+* Use resource based policies to grant permissions to other AWS services/resources.
+* Similar to S3 bucket policies for S3 buckets.
+* An IAM principal can access Lambda:
+  - If the IAM policy attached to the principal authorizes it (e.g. user access)
+  - Or if the resource-based policy authorizes (eg, service access)
+* When an AWS service like Amazon S3 calls our Lambda function, the resource-based policy gives it access.
+
+
+### 21.12. AWS Lambda Environment Variables:
+* Lambda Environment variables are key value pair in `String` form and help adjust the function behavior without updating code.
+* The environment variables are available to our code.
+* Lambda Service adds its own environment variables as well.
+* We can encrypt environment variables using KMS when we have secrets.
+* Secrets can be encrypted either by the Lambda service key, or customer's own CMK.
+
+### 21.13. Lambda Monitoring and X-Ray Tracing:
+* CloudWatch Logs:
+  - AWS Lambda execution logs are stored in in AWS CloudWatch Logs.
+  - Make sure AWS Lambda have execution role with IAM Policy that authorizes writes to CloudWatch Logs.
+
+* CloudWatch Metrics:
+  - AWS Lambda Metrics are displayed in CloudWatch Metrics and AWS Lambda UI 
+  - Invocations, Durations, Concurrent Executions
+  - Error Counts, Success Rates, Throttles 
+  - Async Delivery Failures 
+  - Iterator Age (Kinesis & Dynamo DB Streams) i.e. how lagging you are into the reading of your stream.
+
+* We can do X-Ray Tracing in Lambda, we can enable it in Lambda it's called Active Tracing.
+* It Runs the X-Ray daemon for you.
+* We need to use AWS X-Ray SDK in our Lambda Code.
+* Ensure Lambda Function has a correct IAM Execution Role.
+* 
