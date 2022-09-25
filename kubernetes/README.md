@@ -837,3 +837,129 @@ spec:
 
 * Here we are using `valueFrom` field and we are using `configMapKeyRef` to get the value from the configMap.
 * We will assign value of `folder` key (which is `story`) from `data-store-env` configMap to the `STORY_DIR` environment variable.
+
+
+# 4. Kubernetes Networking:
+
+### 4.1. Pod Internal Communication:
+* In Kubernetes we can communicate between pods using `localhost` as the IP address.
+* We can either use the `localhost` directly in our application code or we can use environment variables to provide value of `localhost` to our application code.
+* For example in our `deployment` yaml file we can provide an environment variable with value `localhost` and then we can use this environment variable in our application code.
+* As shown below we are using `localhost` as the value of `AUTH_ADDRESS` environment variable.
+
+```yaml
+spec:
+  containers:
+    - name: users
+      image: users
+      env:
+        - name: AUTH_ADDRESS
+          value: "localhost"
+```
+
+* In our application code we can use this environment variable as follows:
+
+```javascript
+const authAddress = `http://${process.env.AUTH_ADDRESS}/token/`;
+```
+
+* We can also use `localhost` directly in our application code as follows:
+
+```javascript
+const authAddress = `http://localhost/token/`;
+```
+
+* In both cases we are using `localhost` as the IP address to communicate with the `auth` service.
+* Usually in practice there is only one container per pod, we see multiple containers in a pod that are very tightly coupled and are used for different purposes.
+
+
+### 4.2. Pod-to-Pod Communication:
+* If there is a deployment that we don't want to expose to the outside world and use it inside the cluster only, in that case we should use `ClusterIP` type for the service as shown below:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  type: ClusterIP
+  selector:
+    app: auth
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+
+* Now we want our other pods to communicate with this service, we need IP address of our Service, because Services use stable IP addresses.
+* One way is to `kubectl apply` the service and then `kubectl get services` to get the IP address of the service. 
+* Then use that IP address in our application code or provide it as an environment variable in our deployment yaml file as shown below.
+
+```
+spec:
+  containers:
+    - name: users
+      image: users
+      env:
+        - name: AUTH_ADDRESS
+          value: "10.99.104.252"
+```
+
+* And provide that environment variable in our application code as shown below.
+
+```javascript
+const authAddress = `http://${process.env.AUTH_ADDRESS}/token/`;
+```
+
+* Another way is that Kubernetes provides us an environment variable by default which contains the cluster internal IP address of the service.
+* That variable is provided for all the services we create, we can access it by giving service name in capital letters, replacing hyphens (`-`) in the name by underscores (`_`) and appending `_SERVICE_HOST` to it.
+* This way we can get the generated IP Address automatically.
+
+### 4.3. Pod-to-Pod Communication using DNS:
+* Kubernetes creates DNS records for Services and Pods. We can contact Services with consistent DNS names instead of IP addresses.
+* Every Service defined in the cluster (including the DNS server itself) is assigned a DNS name. By default, a client Pod's DNS search list includes the Pod's own namespace and the cluster's default domain.
+* The Services and Pods objects get DNS records in the form of `<service-name>.<namespace>.svc.cluster.local`, where "cluster.local" is the cluster domain.
+* These DNS records are used to communicate between pods.
+* If we are using default namespace then we can use the service name and append `.default`, and use as the DNS name.
+* For example in case of `auth-service` we can use `auth-service.default` as the DNS name either in our application code or in our deployment yaml file as environment variable as shown below.
+
+```javascript
+const authAddress = `http://auth-service/token/`;
+```
+
+```yaml
+spec:
+  containers:
+    - name: users
+      image: users
+      env:
+        - name: AUTH_ADDRESS
+          value: "auth-service.default"
+```
+
+
+# 5. Kubernetes Deployment Strategies:
+* We can deploy our application in different ways in Kubernetes.
+  - On premise
+  - Public Cloud VMs e.g. Amazon EC2, Google Cloud VMs, Microsoft Azure VMs
+  - Public Cloud Managed Kubernetes e.g. AWS EKS, Google GKE, Microsoft AKS
+* To manage Kubernetes on premise or public cloud VMs we can use a tool called [KOps](https://kops.sigs.k8s.io/).
+
+
+### 5.1. AWS EKS:
+* AWS EKS or Elastic Kubernetes Service is a managed Kubernetes Service.
+* Until now we have been using minikube to manage our Kubernetes Clusters, but now we want to deploy our application to EKS clusters.
+* Previously when we've been using `kubectl` command, it was using minikube, we can check that by checking `vi ~/.kube/config`
+* Now we want to use `kubectl` command on our EKS Cluster, for that we need `aws cli` and using that we can update our Kubernetes Config file to use our EKS Cluster whenever we do `kubectl`.
+* Before updating Kubernetes Config files it's good practice to backup the config file.
+* We can use following command to update the Kubernetes Config file:
+
+```bash
+aws eks --region <aws-region-name> update-kubeconfig --name <name-of-eks-cluster>
+```
+* Follow the [guide](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html) to install `eksctl` on your machine.
+* The `eksctl` is a simple command line tool for creating and managing Kubernetes clusters on Amazon EKS. 
+* `Eksctl` provides the fastest and easiest way to create a new cluster with nodes for Amazon EKS
+
+### 5.2. Create EKS Cluster:
+* To create EKS Cluster use the [guide](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html)
