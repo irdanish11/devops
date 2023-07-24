@@ -1,0 +1,4 @@
+dash==2.11.1
+pandas==1.4.4
+gunicorn==21.2.0
+gevent==23.7.0

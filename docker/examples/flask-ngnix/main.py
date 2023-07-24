@@ -9,10 +9,8 @@ def index():
 @app.route('/ping', methods=['GET'])
 def ping():
     """
-    Determine if the container is healthy by running a sample through the algorithm.
+    Determine if the container is healthy.
     """
-    # we will return status ok if the model doesn't barf
-    # but you can also insert slightly more sophisticated tests here
     return Response(response='{"status": "healthy"}', status=200, mimetype='application/json')
 
 
