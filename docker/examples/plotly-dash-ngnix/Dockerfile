@@ -19,7 +19,10 @@ RUN pip --no-cache-dir install -r requirements.txt
 RUN apt-get autoremove -y && apt-get clean && apt-get update
 
 # Set up environment variables
+# Python output i.e. the (stdout and stderr) streams is
+# sent straight to the conatiner log
 ENV PYTHONUNBUFFERED=TRUE
+# avoid writing byte code (.pyc files)
 ENV PYTHONDONTWRITEBYTECODE=TRUE
 ENV PATH="${WORK_DIR}:${PATH}"
 ENV APP_DIR=${WORK_DIR}
