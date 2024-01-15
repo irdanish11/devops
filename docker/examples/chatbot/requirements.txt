@@ -1,0 +1,8 @@
+fastapi
+uuid
+uvicorn 
+gunicorn 
+WebSockets 
+python-dotenv 
+aioredis
+aiohttp
